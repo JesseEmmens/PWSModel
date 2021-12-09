@@ -2,6 +2,7 @@ globals [
   hour
   day
   year
+  thing
 ]
 
 breed [foxes fox]
@@ -58,6 +59,7 @@ to go
       set day 0
     ]
   ]
+set thing random-gamma 8
   tick
 END
 
