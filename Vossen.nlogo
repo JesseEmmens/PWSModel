@@ -2,6 +2,7 @@ globals [
   hour
   day
   year
+  average-ideal-temperature
 ]
 
 breed [foxes fox]
@@ -30,20 +31,17 @@ to setup
   create-foxes population-start [
     set shape "fox"
     setxy random-xcor random-ycor
-    set ideal-temperature random 5 - 2 ;;start with ideal temp between -2 and 2
+    set ideal-temperature random 41 - 20 ;;start with ideal temp between -10 and 10
     set color 37
     set size 5
     set days-till-hatch "x"
-    set max-age 365 + random 5500 ;;vossen worden tussen 0 en 14 jaar oud
+    set max-age 365 + random-exponential 500 - (ideal-temperature - temperature) ^ 2 ;;vossen worden tussen 0 en 14 jaar oud
+    while[max-age > 5500] [
+      set max-age 365 + random-exponential 500 - (ideal-temperature - temperature) ^ 2 ;;zorgen dat ze niet te oud worden, omdathet toch een random verdeling is is er een kans op vossen van 1000 jaar
+    ]
     set age random max-age ;;willekeurige leeftijd tussen 0 en de maximale leeftijd van de vos
-    ifelse (random 2 = 1) [
-      set male true
-    ]
-    [
-      set male false
-    ]
+    set male random 2 = 1
   ]
-
 END
 
 to go
@@ -71,6 +69,15 @@ END
 
 to day_procedures
   age_foxes
+  get_average_temp
+END
+
+to get_average_temp
+  let total-temp 0
+  ask foxes [
+    set total-temp total-temp + ideal-temperature
+  ]
+  set average-ideal-temperature (total-temp / count foxes)
 END
 
 to seek_pair ;;hier zit nu een error in met distance
@@ -86,8 +93,18 @@ to seek_pair ;;hier zit nu een error in met distance
         [
           fd travel-distance
         ]
-        if (distance pair-fox = 0 AND male = false)[
-          set days-till-hatch 52 ;; gemiddelde tijd die een vossenbaby in de buik zit, dit laten verschillen is niet nodig
+        if(distance pair-fox = 0) [
+          ifelse(male) [
+            let temp ideal-temperature
+            ask pair-fox [
+              set days-till-hatch 52
+              set pair-temperature temp
+            ]
+          ]
+          [
+            set days-till-hatch 52 ;; gemiddelde tijd die een vossenbaby in de buik zit, dit laten verschillen is niet nodig
+            set pair-temperature [ideal-temperature] of pair-fox
+          ]
         ]
       ]
     ]
@@ -120,7 +137,16 @@ to age_foxes
           set age 0
           set male random 2 = 1
           set days-till-hatch "x"
-;          set ideal-temperature
+          set ideal-temperature (-1 + random 3) + ideal-temperature (random ideal-temperature - pair-temperature ;;thing to fix
+          ifelse(random 2 = 0) [
+            set max-age random 305
+          ]
+          [
+            set max-age 365 + random-exponential 500 - (ideal-temperature - temperature) ^ 2 ;;vossen worden tussen 0 en 14 jaar oud
+            while[max-age > 5500] [
+              set max-age 365 + random-exponential 500 - (ideal-temperature - temperature) ^ 2 ;;zorgen dat ze niet te oud worden, omdathet toch een random verdeling is is er een kans op vossen van 1000 jaar
+            ]
+          ]
         ]
         set days-till-hatch "hatched"
       ]
@@ -152,8 +178,8 @@ GRAPHICS-WINDOW
 50
 -50
 50
-1
-1
+0
+0
 1
 ticks
 30.0
@@ -201,7 +227,7 @@ temperature
 temperature
 -50
 50
-9.0
+-30.0
 1
 1
 ° C
@@ -216,7 +242,7 @@ population-start
 population-start
 1
 100
-18.0
+50.0
 1
 1
 NIL
@@ -224,10 +250,10 @@ HORIZONTAL
 
 PLOT
 909
-171
+271
 1347
 496
-poisson distribution
+population size
 ticks
 leeftijd
 0.0
@@ -238,7 +264,25 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot thing"
+"default" 1.0 0 -16777216 true "" "plot count foxes"
+
+PLOT
+895
+10
+1337
+226
+average ideal temperature
+ticks
+avg temp
+0.0
+10000.0
+-10.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot average-ideal-temperature"
 
 @#$#@#$#@
 ## WHAT IS IT?
