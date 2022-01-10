@@ -31,13 +31,13 @@ to setup
   create-foxes population-start [
     set shape "fox"
     setxy random-xcor random-ycor
-    set ideal-temperature random 41 - 20 ;;start with ideal temp between -10 and 10
-    set color 37
+    set ideal-temperature random 5 - 2 ;;start with ideal temp between -2 and 2
+    set color 105 - 10 * (5 + floor (ideal-temperature / 5))
     set size 5
     set days-till-hatch "x"
-    set max-age 365 + random-exponential 500 - (ideal-temperature - temperature) ^ 2 ;;vossen worden tussen 0 en 14 jaar oud
+    set max-age 365 + random-exponential 600 ;;vossen worden tussen 0 en 14 jaar oud
     while[max-age > 5500] [
-      set max-age 365 + random-exponential 500 - (ideal-temperature - temperature) ^ 2 ;;zorgen dat ze niet te oud worden, omdathet toch een random verdeling is is er een kans op vossen van 1000 jaar
+      set max-age 365 + random-exponential 600 ;;zorgen dat ze niet te oud worden, omdathet toch een random verdeling is is er een kans op vossen van 1000 jaar
     ]
     set age random max-age ;;willekeurige leeftijd tussen 0 en de maximale leeftijd van de vos
     set male random 2 = 1
@@ -51,9 +51,13 @@ to go
     day_procedures
     set hour 0
     set day day + 1
+    ask patches [
+      set pcolor 29.9 - (temperature + 50) / 50 ;;om een koude wereld ook echt koud eruit te laten zien
+    ]
     if(day = 365) [
       set year year + 1
       set day 0
+      set temperature temperature + temperature-increase
     ]
   ]
   tick
@@ -80,10 +84,10 @@ to get_average_temp
   set average-ideal-temperature (total-temp / count foxes)
 END
 
-to seek_pair ;;hier zit nu een error in met distance
+to seek_pair
   ask foxes with [days-till-hatch = "x" AND age > 365] [
     let sex male
-    if(count foxes with [days-till-hatch = "x" AND self != myself AND sex != male] > 0) [
+    if(count foxes with [days-till-hatch = "x" AND self != myself AND sex != male AND age > 365] > 0) [
       set pair-fox min-one-of foxes with [days-till-hatch = "x" AND self != myself AND sex != male] [distance myself] ;;ik weet niet precies hoe maar dit werkt
       if (distance pair-fox < 2)[ ;;binnen 2km radius
         face pair-fox
@@ -129,22 +133,32 @@ END
 
 to age_foxes
   ask foxes [
-    set age age + 1
+    set age age + 1 + abs (temperature - ideal-temperature) * 0.2
     if (days-till-hatch != "x" AND days-till-hatch != "hatched") [
       set days-till-hatch days-till-hatch - 1
       if (days-till-hatch <= 0) [
+        let ideal-temperature-mother ideal-temperature
+        let ideal-temperature-father pair-temperature
         hatch 5 + random 3 [ ;;tussen 5 en 7 per hatch
           set age 0
+          set color 105 - 10 * (5 + floor (ideal-temperature / 5))
           set male random 2 = 1
           set days-till-hatch "x"
-          set ideal-temperature (-1 + random 3) + ideal-temperature (random ideal-temperature - pair-temperature
+          let diff abs ideal-temperature-mother - ideal-temperature-father
+          ifelse (ideal-temperature-mother > ideal-temperature-father) [
+            set ideal-temperature ideal-temperature-father + (random (diff + 12)) - 5
+          ]
+          [
+            set ideal-temperature ideal-temperature-mother + (random (diff + 12)) - 5
+          ]
+
           ifelse(random 2 = 0) [
             set max-age random 305
           ]
           [
-            set max-age 365 + random-exponential 500 - (ideal-temperature - temperature) ^ 2 ;;vossen worden tussen 0 en 14 jaar oud
+            set max-age 305 + random-exponential 600 ;;vossen worden tussen 0 en 14 jaar oud
             while[max-age > 5500] [
-              set max-age 365 + random-exponential 500 - (ideal-temperature - temperature) ^ 2 ;;zorgen dat ze niet te oud worden, omdathet toch een random verdeling is is er een kans op vossen van 1000 jaar
+              set max-age 305 + random-exponential 600 ;;zorgen dat ze niet te oud worden, omdat het toch een random verdeling is is er een kans op vossen van 1000 jaar
             ]
           ]
         ]
@@ -156,12 +170,35 @@ to age_foxes
     ]
   ]
 END
+
+to GENEFLOW
+  create-foxes 1 [
+    set shape "fox"
+    setxy random-xcor random-ycor
+    set ideal-temperature geneflow-temperature
+    set color 105 - 10 * (5 + floor (ideal-temperature / 5))
+    set size 5
+    set days-till-hatch "x"
+    set max-age 365 + random-exponential 600 ;;vossen worden tussen 0 en 14 jaar oud
+    while[max-age > 5500] [
+      set max-age 365 + random-exponential 600 ;;zorgen dat ze niet te oud worden, omdathet toch een random verdeling is is er een kans op vossen van 1000 jaar
+    ]
+    set age random max-age ;;willekeurige leeftijd tussen 0 en de maximale leeftijd van de vos
+    set male random 2 = 1
+  ]
+END
+
+to GENETICDRIFT
+  ask fox fox-number [
+    die
+  ]
+END
 @#$#@#$#@
 GRAPHICS-WINDOW
-287
-27
-795
-536
+369
+26
+877
+535
 -1
 -1
 4.9505
@@ -219,30 +256,30 @@ NIL
 1
 
 SLIDER
-23
-213
-195
-246
+25
+256
+197
+289
 temperature
 temperature
 -50
 50
--30.0
+5.5
 1
 1
 ° C
 HORIZONTAL
 
 SLIDER
-23
-292
-195
-325
+131
+75
+303
+108
 population-start
 population-start
 1
 100
-50.0
+17.0
 1
 1
 NIL
@@ -255,7 +292,7 @@ PLOT
 496
 population size
 ticks
-leeftijd
+aantal vossen
 0.0
 100.0
 0.0
@@ -283,6 +320,135 @@ false
 "" ""
 PENS
 "default" 1.0 0 -16777216 true "" "plot average-ideal-temperature"
+
+MONITOR
+1359
+95
+1416
+140
+year
+year
+17
+1
+11
+
+INPUTBOX
+208
+258
+355
+318
+temperature-increase
+0.0
+1
+0
+Number
+
+MONITOR
+1366
+191
+1423
+236
+NIL
+day
+17
+1
+11
+
+BUTTON
+12
+433
+107
+466
+NIL
+GENEFLOW
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+INPUTBOX
+122
+434
+275
+494
+geneflow-temperature
+0.0
+1
+0
+Number
+
+BUTTON
+0
+502
+116
+535
+NIL
+GENETICDRIFT
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+INPUTBOX
+121
+503
+276
+563
+fox-number
+1.0
+1
+0
+Number
+
+TEXTBOX
+211
+323
+361
+365
+De jaarlijkse stijging van temperatuur, voer een negatief getal in voor daling
+11
+0.0
+1
+
+TEXTBOX
+283
+435
+362
+501
+Ideale temperatuur van de vos die erbij komt
+11
+0.0
+1
+
+TEXTBOX
+279
+504
+361
+555
+Nummer van de vos die sterft (verdwijnt)
+11
+0.0
+1
+
+TEXTBOX
+305
+71
+377
+130
+Het aantal vossen waarmee we beginnen
+11
+0.0
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
