@@ -51,8 +51,18 @@ to go
     day_procedures
     set hour 0
     set day day + 1
-    ask patches [
-      set pcolor 29.9 - (temperature + 50) / 50 ;;om een koude wereld ook echt koud eruit te laten zien
+    ifelse soortvorming [
+      ask patches with [pycor <= 1 AND pycor >= -1][
+        set pcolor black
+      ]
+      ask patches with [pcolor != black][
+        set pcolor 29.9 - (temperature + 50) / 50 ;;om een koude wereld ook echt koud eruit te laten zien
+      ]
+    ]
+    [
+      ask patches [
+        set pcolor 29.9 - (temperature + 50) / 50
+      ]
     ]
     if(day = 365) [
       set year year + 1
@@ -87,8 +97,9 @@ END
 to seek_pair
   ask foxes with [days-till-hatch = "x" AND age > 365] [
     let sex male
+    let y ycor
     if(count foxes with [days-till-hatch = "x" AND self != myself AND sex != male AND age > 365] > 0) [
-      set pair-fox min-one-of foxes with [days-till-hatch = "x" AND self != myself AND sex != male] [distance myself] ;;ik weet niet precies hoe maar dit werkt
+      set pair-fox min-one-of foxes with [days-till-hatch = "x" AND self != myself AND sex != male AND age > 365] [distance myself] ;;ik weet niet precies hoe maar dit werkt
       if (distance pair-fox < 2)[ ;;binnen 2km radius
         face pair-fox
         ifelse (distance pair-fox < travel-distance) [
@@ -120,13 +131,14 @@ to move_foxes
   ask foxes [
     if(pair-fox = 0)[
       rt random 31 - 15
-      ifelse can-move? travel-distance [
-        fd travel-distance
-      ]
-      [
+      if NOT (can-move? travel-distance) [
         rt 180
-        fd travel-distance
       ]
+
+      if [pcolor] of patch-left-and-ahead 0 travel-distance = 0 [
+        rt 180
+      ]
+      fd travel-distance
     ]
   ]
 END
@@ -215,8 +227,8 @@ GRAPHICS-WINDOW
 50
 -50
 50
-0
-0
+1
+1
 1
 ticks
 30.0
@@ -264,7 +276,7 @@ temperature
 temperature
 -50
 50
-5.5
+0.0
 1
 1
 ° C
@@ -279,7 +291,7 @@ population-start
 population-start
 1
 100
-17.0
+24.0
 1
 1
 NIL
@@ -377,7 +389,7 @@ INPUTBOX
 275
 494
 geneflow-temperature
-0.0
+5.5
 1
 0
 Number
@@ -449,6 +461,64 @@ Het aantal vossen waarmee we beginnen
 11
 0.0
 1
+
+SWITCH
+179
+178
+299
+211
+Peripatrisch
+Peripatrisch
+1
+1
+-1000
+
+SWITCH
+42
+179
+171
+212
+Soortvorming
+Soortvorming
+0
+1
+-1000
+
+SLIDER
+18
+372
+190
+405
+temperature2
+temperature2
+-50
+50
+0.0
+1
+1
+°C
+HORIZONTAL
+
+TEXTBOX
+48
+353
+198
+371
+Alleen voor soortvorming
+11
+0.0
+1
+
+INPUTBOX
+197
+373
+352
+433
+temperature-increase2
+0.0
+1
+0
+Number
 
 @#$#@#$#@
 ## WHAT IS IT?
