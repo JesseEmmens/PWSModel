@@ -31,13 +31,13 @@ to setup
   create-foxes population-start [
     set shape "fox"
     setxy random-xcor random-ycor
-    set ideal-temperature random 5 - 2 ;;start with ideal temp between -2 and 2
+    set ideal-temperature temperature + random 5 - 2 ;;start with ideal temp between -2 and 2
     set color 105 - 10 * (5 + floor (ideal-temperature / 5))
     set size 5
     set days-till-hatch "x"
-    set max-age 365 + random-exponential 600 ;;vossen worden tussen 0 en 14 jaar oud
+    set max-age 365 + random-exponential 700 ;;vossen worden tussen 0 en 14 jaar oud
     while[max-age > 5500] [
-      set max-age 365 + random-exponential 600 ;;zorgen dat ze niet te oud worden, omdathet toch een random verdeling is is er een kans op vossen van 1000 jaar
+      set max-age 365 + random-exponential 700 ;;zorgen dat ze niet te oud worden, omdathet toch een random verdeling is is er een kans op vossen van 1000 jaar
     ]
     set age random max-age ;;willekeurige leeftijd tussen 0 en de maximale leeftijd van de vos
     set male random 2 = 1
@@ -55,8 +55,11 @@ to go
       ask patches with [pycor <= 1 AND pycor >= -1][
         set pcolor black
       ]
-      ask patches with [pcolor != black][
-        set pcolor 29.9 - (temperature + 50) / 50 ;;om een koude wereld ook echt koud eruit te laten zien
+      ask patches with [pycor < 1 AND pcolor != black][
+        set pcolor 29.9 - (temperature2 + 50) / 50 ;;om een koude wereld ook echt koud eruit te laten zien
+      ]
+      ask patches with [pycor > 1 AND pcolor != black] [
+        set pcolor 29.9 - (temperature + 50) / 50
       ]
     ]
     [
@@ -68,6 +71,7 @@ to go
       set year year + 1
       set day 0
       set temperature temperature + temperature-increase
+      set temperature2 temperature2 + temperature-increase2
     ]
   ]
   tick
@@ -111,6 +115,7 @@ to seek_pair
         if(distance pair-fox = 0) [
           ifelse(male) [
             let temp ideal-temperature
+            set pair-temperature [ideal-temperature] of pair-fox
             ask pair-fox [
               set days-till-hatch 52
               set pair-temperature temp
@@ -134,10 +139,12 @@ to move_foxes
       if NOT (can-move? travel-distance) [
         rt 180
       ]
-
-      if [pcolor] of patch-left-and-ahead 0 travel-distance = 0 [
-        rt 180
+      if patch-left-and-ahead 0 travel-distance != nobody [
+        if [pcolor] of patch-left-and-ahead 0 travel-distance = 0 [
+          rt 180
+        ]
       ]
+
       fd travel-distance
     ]
   ]
@@ -145,7 +152,17 @@ END
 
 to age_foxes
   ask foxes [
-    set age age + 1 + abs (temperature - ideal-temperature) * 0.2
+    ifelse (Soortvorming)[
+      ifelse (ycor > 0) [
+        set age age + 1 + abs (temperature - ideal-temperature) * 0.3
+      ]
+      [
+        set age age + 1 + abs (temperature2 - ideal-temperature) * 0.3
+      ]
+    ]
+    [
+      set age age + 1 + abs (temperature - ideal-temperature) * 0.3
+    ]
     if (days-till-hatch != "x" AND days-till-hatch != "hatched") [
       set days-till-hatch days-till-hatch - 1
       if (days-till-hatch <= 0) [
@@ -158,19 +175,28 @@ to age_foxes
           set days-till-hatch "x"
           let diff abs ideal-temperature-mother - ideal-temperature-father
           ifelse (ideal-temperature-mother > ideal-temperature-father) [
-            set ideal-temperature ideal-temperature-father + (random (diff + 12)) - 5
+            ifelse(random 2 = 1)[ ;;gotta do this because of some weird bug
+              set ideal-temperature ideal-temperature-mother - (random (diff + 1)) + random 3 - 1
+            ]
+            [
+              set ideal-temperature ideal-temperature-father + (random (diff + 1)) + random 3 - 1
+            ]
           ]
           [
-            set ideal-temperature ideal-temperature-mother + (random (diff + 12)) - 5
+            ifelse(random 2 = 1)[
+              set ideal-temperature ideal-temperature-father - (random (diff + 1)) + random 3 - 1
+            ]
+            [
+              set ideal-temperature ideal-temperature-mother + (random (diff + 1)) + random 3 - 1
+            ]
           ]
-
           ifelse(random 2 = 0) [
             set max-age random 305
           ]
           [
-            set max-age 305 + random-exponential 600 ;;vossen worden tussen 0 en 14 jaar oud
+            set max-age 305 + random-exponential 700 ;;vossen worden tussen 0 en 14 jaar oud
             while[max-age > 5500] [
-              set max-age 305 + random-exponential 600 ;;zorgen dat ze niet te oud worden, omdat het toch een random verdeling is is er een kans op vossen van 1000 jaar
+              set max-age 305 + random-exponential 700 ;;zorgen dat ze niet te oud worden, omdat het toch een random verdeling is is er een kans op vossen van 1000 jaar
             ]
           ]
         ]
@@ -227,8 +253,8 @@ GRAPHICS-WINDOW
 50
 -50
 50
-1
-1
+0
+0
 1
 ticks
 30.0
@@ -276,7 +302,7 @@ temperature
 temperature
 -50
 50
-0.0
+13.0
 1
 1
 ° C
@@ -291,7 +317,7 @@ population-start
 population-start
 1
 100
-24.0
+41.0
 1
 1
 NIL
@@ -325,8 +351,8 @@ ticks
 avg temp
 0.0
 10000.0
--10.0
-10.0
+6.0
+16.0
 true
 false
 "" ""
@@ -463,24 +489,13 @@ Het aantal vossen waarmee we beginnen
 1
 
 SWITCH
-179
-178
-299
-211
-Peripatrisch
-Peripatrisch
-1
-1
--1000
-
-SWITCH
 42
 179
 171
 212
 Soortvorming
 Soortvorming
-0
+1
 1
 -1000
 
@@ -493,7 +508,7 @@ temperature2
 temperature2
 -50
 50
-0.0
+13.0
 1
 1
 °C
@@ -523,39 +538,45 @@ Number
 @#$#@#$#@
 ## WHAT IS IT?
 
-(a general understanding of what the model is trying to show or explain)
+A model showing how natural selection works, including concepts like genetic drift, gene flow and the making of species (simplified).
+Some things are written in Dutch, while other things are written in English, depending on what my mood was while writing the script. I am sorry for this, I might change it in the future, but for now
 
 ## HOW IT WORKS
 
-(what rules the agents use to create the overall behavior of the model)
+Foxes in this model have an ideal temperature. Offspring of these foxes inherit these temperatures, the offspring can have a temperature between, 1 above or 1 below the temperatures of their parents. Having a greater difference in ideal temperature and surrounding temperature makes foxes age faster, and thus die sooner.
 
 ## HOW TO USE IT
 
-(how to use the model, including a description of each of the items in the Interface tab)
+Adjust the population-start slider to your liking, and afterwards press 'setup'. Once your variables such as temperature and temperature-increase (yearly) are set, you can run the model with the 'go' button.
+Switching on 'soortvorming' creates a barrier in the middle of the world, seperating two groups. You may vary the temperatures on both sides of the barrier, which simulates the origin of different species.
+The 'geneflow' button adds a fox to the with a variable temperature, and the 'genetic drift' button removes a fox with a variable fox number (which you can see by right-clicking the fox)
 
 ## THINGS TO NOTICE
 
-(suggested things for the user to notice while running the model)
+You may notice an increase in the average temperature while increasing the surrounding temperature, which is what we were hoping to simulate with this model. The color of foxes should change as well, with blue colors indicating a cold ideal temperature and red colors a warm ideal temperature.
 
 ## THINGS TO TRY
 
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
+I would suggest to try and increase/decrease the temperature to see what foxes can adapt to. Note that what normally happens over millions of years now happens in a single decade, so this model is not fit to measure the time it takes for foxes to adapt. This is because this model's primary purpose is to show how natural selection works, and running this model for a day just to show how the natural selection works would be overkill.
 
 ## EXTENDING THE MODEL
 
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
+You might add a way to cap the foxes' population, as of right now the population can easily increase to up to thousands of foxes which is really not realistic. I have not added this yet because I would not know how to implement it, and I could not find sufficient information about the territory of these foxes.
 
 ## NETLOGO FEATURES
 
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
+This model uses the random-exponential function provided by Netlogo to calculate the maximum age of the foxes, making it probable but extremely unlikely for these foxes to reach their maximum age.
 
-## RELATED MODELS
-
-(models in the NetLogo Models Library and elsewhere which are of related interest)
 
 ## CREDITS AND REFERENCES
 
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+Baldwin, M. (z.d.). Red Fox Territory & Home Range | Wildlife Online. Wildlifeonline.Me.Uk. Geraadpleegd op 7 december 2021, van https://www.wildlifeonline.me.uk/animals/article/red-fox-territory-home-range 
+
+Fox, C. (2021, 9 juni). Red Foxes: The ULTIMATE Guide. All Things Foxes. Geraadpleegd op 7 december 2021, van https://allthingsfoxes.com/red-foxes/ 
+
+Schofield, R. D. (1958). Litter Size and Age Ratios of Michigan Red Foxes. The Journal of Wildlife Management, 22(3), 313. https://doi.org/10.2307/3796468 
+
+FoxesWorlds. (2014, 10 maart). Fox Reproduction. Fox Facts and Information. Geraadpleegd op 9 december 2021, van https://www.foxesworlds.com/fox-reproduction/ 
 @#$#@#$#@
 default
 true
