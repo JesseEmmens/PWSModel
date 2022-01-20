@@ -35,9 +35,9 @@ to setup
     set color 105 - 10 * (5 + floor (ideal-temperature / 5))
     set size 5
     set days-till-hatch "x"
-    set max-age 365 + random-exponential 700 ;;vossen worden tussen 0 en 14 jaar oud
+    set max-age 365 + random-exponential 800 ;;vossen worden tussen 0 en 14 jaar oud
     while[max-age > 5500] [
-      set max-age 365 + random-exponential 700 ;;zorgen dat ze niet te oud worden, omdathet toch een random verdeling is is er een kans op vossen van 1000 jaar
+      set max-age 365 + random-exponential 800 ;;zorgen dat ze niet te oud worden, omdathet toch een random verdeling is is er een kans op vossen van 1000 jaar
     ]
     set age random max-age ;;willekeurige leeftijd tussen 0 en de maximale leeftijd van de vos
     set male random 2 = 1
@@ -80,7 +80,7 @@ END
 to hour_procedures
   ask foxes [set travel-distance 0.2 + random-float 0.2]
   move_foxes
-  if(day < 60) [ ;;eerste 2 maanden van de lente is paarseizoen
+  if(day < 62) [ ;;eerste 2 maanden van de lente is paarseizoen
     seek_pair
   ]
 END
@@ -194,9 +194,9 @@ to age_foxes
             set max-age random 305
           ]
           [
-            set max-age 305 + random-exponential 700 ;;vossen worden tussen 0 en 14 jaar oud
+            set max-age 305 + random-exponential 800 ;;vossen worden tussen 0 en 14 jaar oud
             while[max-age > 5500] [
-              set max-age 305 + random-exponential 700 ;;zorgen dat ze niet te oud worden, omdat het toch een random verdeling is is er een kans op vossen van 1000 jaar
+              set max-age 305 + random-exponential 800 ;;zorgen dat ze niet te oud worden, omdat het toch een random verdeling is is er een kans op vossen van 1000 jaar
             ]
           ]
         ]
@@ -210,19 +210,26 @@ to age_foxes
 END
 
 to GENEFLOW
-  create-foxes 1 [
-    set shape "fox"
-    setxy random-xcor random-ycor
-    set ideal-temperature geneflow-temperature
-    set color 105 - 10 * (5 + floor (ideal-temperature / 5))
-    set size 5
-    set days-till-hatch "x"
-    set max-age 365 + random-exponential 600 ;;vossen worden tussen 0 en 14 jaar oud
-    while[max-age > 5500] [
-      set max-age 365 + random-exponential 600 ;;zorgen dat ze niet te oud worden, omdathet toch een random verdeling is is er een kans op vossen van 1000 jaar
+  ifelse(Soortvorming)[
+    ask fox fox-number [
+      set ycor -1 * ycor
     ]
-    set age random max-age ;;willekeurige leeftijd tussen 0 en de maximale leeftijd van de vos
-    set male random 2 = 1
+  ]
+  [
+    create-foxes 1 [
+      set shape "fox"
+      setxy random-xcor random-ycor
+      set ideal-temperature geneflow-temperature
+      set color 105 - 10 * (5 + floor (ideal-temperature / 5))
+      set size 5
+      set days-till-hatch "x"
+      set max-age 365 + random-exponential 800 ;;vossen worden tussen 0 en 14 jaar oud
+      while[max-age > 5500] [
+        set max-age 365 + random-exponential 800 ;;zorgen dat ze niet te oud worden, omdathet toch een random verdeling is is er een kans op vossen van 1000 jaar
+      ]
+      set age random max-age ;;willekeurige leeftijd tussen 0 en de maximale leeftijd van de vos
+      set male random 2 = 1
+    ]
   ]
 END
 
@@ -302,7 +309,7 @@ temperature
 temperature
 -50
 50
-13.0
+8.0
 1
 1
 ° C
@@ -317,7 +324,7 @@ population-start
 population-start
 1
 100
-41.0
+67.0
 1
 1
 NIL
@@ -351,8 +358,8 @@ ticks
 avg temp
 0.0
 10000.0
-6.0
-16.0
+-10.0
+10.0
 true
 false
 "" ""
@@ -376,7 +383,7 @@ INPUTBOX
 355
 318
 temperature-increase
-0.0
+0.3
 1
 0
 Number
@@ -415,7 +422,7 @@ INPUTBOX
 275
 494
 geneflow-temperature
-5.5
+15.0
 1
 0
 Number
@@ -471,9 +478,9 @@ Ideale temperatuur van de vos die erbij komt
 TEXTBOX
 279
 504
-361
-555
-Nummer van de vos die sterft (verdwijnt)
+367
+588
+Nummer van de geselecteerde vos voor gene flow (met soortvorming) of genetic drift
 11
 0.0
 1
@@ -495,7 +502,7 @@ SWITCH
 212
 Soortvorming
 Soortvorming
-1
+0
 1
 -1000
 
@@ -539,7 +546,7 @@ Number
 ## WHAT IS IT?
 
 A model showing how natural selection works, including concepts like genetic drift, gene flow and the making of species (simplified).
-Some things are written in Dutch, while other things are written in English, depending on what my mood was while writing the script. I am sorry for this, I might change it in the future, but for now
+Some things are written in Dutch, while other things are written in English, depending on what my mood was while writing the script. I am sorry for this, I might change it in the future. 
 
 ## HOW IT WORKS
 
